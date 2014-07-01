@@ -1,1 +1,38 @@
-.
+#read the data
+airlines=read.csv("AirlinesCluster.csv")
+
+# Change the data type to matrix
+airlinesMatrix = as.matrix(airlines)
+str(airlinesMatrix)
+
+# Turn matrix into a vector
+airlinesVector = as.vector(airlinesMatrix)
+str(airlinesVector)
+
+# Compute distances
+distances = dist(airlinesVector, method = "euclidean")
+
+# Hierarchical clustering
+clusterAirlines = hclust(distances, method = "ward") 
+
+# Plot the dendrogram
+plot(clusterAirlines)
+
+# Assign points to clusters
+clusterGroups = cutree(clusterAirlines, k = 10)
+
+# Create a new data set with just the movies from cluster 2
+cluster2 = subset(airlines, clusterGroups==2)
+cluster2
+
+# Specify number of clusters
+k = 5
+# Run k-means
+set.seed(1)
+KMC = kmeans(airlinesVector, centers = k, iter.max = 1000)
+str(KMC)
+airlinesCluster=KMC$cluster
+
+# Visualize the clusters
+dim(airlinesCluster) = c(nrow(airlinesMatrix), ncol(airlinesMatrix))
+image(airlinesCluster, axes = FALSE, col=rainbow(k))
