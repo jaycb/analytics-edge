@@ -1,1 +1,80 @@
-.
+#read the data
+emails = read.csv("emails.csv", stringsAsFactors=FALSE)
+str(emails)
+
+# Install new packages
+
+install.packages("tm")
+library(tm)
+install.packages("SnowballC")
+library(SnowballC)
+
+# Create corpus
+ corpus = Corpus(VectorSource(emails$text))
+
+# Look at corpus
+corpus
+corpus[[1]]
+
+
+# Convert to lower-case
+corpus = tm_map(corpus, tolower)
+corpus[[1]]
+
+# Remove punctuation
+corpus = tm_map(corpus, removePunctuation)
+corpus[[1]]
+
+# Look at stop words 
+stopwords("english")[1:10]
+
+# Remove stopwords 
+corpus = tm_map(corpus, removeWords, stopwords("english"))
+corpus[[1]]
+
+# Stem document 
+corpus = tm_map(corpus, stemDocument)
+corpus[[1]]
+
+# Create matrix
+frequencies = DocumentTermMatrix(corpus)
+frequencies
+
+# Look at matrix 
+inspect(frequencies[1000:1005,505:515])
+
+# Check for sparsity
+findFreqTerms(frequencies, lowfreq=20)
+
+# Remove sparse terms
+sparse = removeSparseTerms(frequencies, 0.995)
+sparse
+
+# Convert to a data frame
+emailsSparse = as.data.frame(as.matrix(sparse))
+
+# Make all variable names R-friendly
+colnames(emailsSparse) = make.names(colnames(emailsSparse))
+
+# Split the data
+
+#Build a CART model
+library(rpart)
+library(rpart.plot)
+emailCART = rpart(spam ~ ., data=trainSparse, method="class")
+prp(emailCART)
+
+# Evaluate the performance of the model
+predictCART = predict(emailCART, newdata=testSparse, type="class")
+table(testSparse$spam, predictCART)
+
+
+# Random forest model
+library(randomForest)
+set.seed(123)
+emailRF = randomForest(spam ~ ., data=trainSparse)
+# Make predictions:
+predictRF = predict(emailRF, newdata=testSparse)
+table(testSparse$spam, predictRF)
+
+
