@@ -1,1 +1,79 @@
-.
+# decision tree for classification
+# Read in the data
+letters = read.csv("letters_ABPR.csv")
+str(stevens)
+
+# Split the data
+library(caTools)
+set.seed(3000)
+split = sample.split(letters$letter, SplitRatio = 0.7)
+Train = subset(letters, split==TRUE)
+Test = subset(letters, split==FALSE)
+
+# Install rpart library
+install.packages("rpart")
+library(rpart)
+install.packages("rpart.plot")
+library(rpart.plot)
+
+# CART model
+lettersTree = rpart(letter ~ .,method="class", data = Train, control=rpart.control(minbucket=25))
+prp(lettersTree)
+
+# Make predictions
+PredictCART = predict(lettersTree, newdata = Test, type = "class")
+table(Test$letter, PredictCART)
+
+# ROC curve
+library(ROCR)
+
+PredictROC = predict(lettersTree, newdata = Test)
+PredictROC
+
+pred = prediction(PredictROC[,2], Test$letter)
+perf = performance(pred, "tpr", "fpr")
+plot(perf)
+
+
+
+# Random Forests
+
+# Install randomForest package
+install.packages("randomForest")
+library(randomForest)
+
+# Build random forest model
+lettersForest = randomForest(letter ~ ., data = Train, ntree=200, nodesize=25 )
+
+# Convert outcome to factor
+Train$letter = as.factor(Train$letter)
+Test$letter = as.factor(Test$letter)
+
+# Try again
+lettersForest = randomForest(letter ~ ., data = Train, ntree=200, nodesize=25 )
+
+# Make predictions
+PredictForest = predict(lettersForest, newdata = Test)
+table(Test$letter, PredictForest)
+
+# Install cross-validation packages
+install.packages("caret")
+library(caret)
+install.packages("e1071")
+library(e1071)
+
+# Define cross-validation experiment
+fitControl = trainControl( method = "cv", number = 10 )
+cartGrid = expand.grid( .cp = (1:50)*0.01) 
+
+# Perform the cross validation
+train(letter ~ ., data = Train, method = "rpart", trControl = fitControl, tuneGrid = cartGrid )
+
+# Create a new CART model
+lettersTreeCV = rpart(letter ~ ., method="class", data = Train, control=rpart.control(cp = 0.18))
+
+# Make predictions
+PredictCV = predict(lettersTreeCV, newdata = Test, type = "class")
+table(Test$lettes, PredictCV)
+
+
